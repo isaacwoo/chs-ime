@@ -57,7 +57,7 @@ class Matcher:
         if len(results) < _MAX_CANDIDATES:
             fuzzy = self._fuzzy_candidates(syllables)
             seen = {w for w, _ in results}
-            results += [(w, sc * 0.5) for w, sc in fuzzy if w not in seen]
+            results += [(w, sc) for w, sc in fuzzy if w not in seen]
 
         return self._finalize(results)
 
