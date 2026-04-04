@@ -18,7 +18,7 @@ from engine.pinyin_parser import segment
 
 _VOWELS = frozenset("aeiouv")
 _BEAM_WIDTH = 5      # candidates kept per DP position in beam search
-_MAX_CANDIDATES = 20
+_MAX_CANDIDATES = 50
 
 
 class Matcher:
@@ -41,7 +41,7 @@ class Matcher:
         if not any(c in _VOWELS for c in s):
             abbrev = self._query_abbrev(s)
             if abbrev:
-                return self._finalize(abbrev)
+                return self._finalize(abbrev, limit=300)
 
         # Strategy 2: full segmentation + sentence DP beam search
         syllables = segment(s, self.loader.full_index)
@@ -115,7 +115,9 @@ class Matcher:
                     entries = self.loader.full_index.get(joined, [])
                     for word, freq in entries[:_BEAM_WIDTH]:
                         boost = self._user_boost(joined, word)
-                        dp[j].append((score + freq + boost, text + word))
+                        span_len = j - i  # number of syllables this phrase covers
+                        span_bonus = (span_len - 1) * 80000  # reward multi-syllable phrase matches
+                        dp[j].append((score + freq + boost + span_bonus, text + word))
 
             # Prune beam: keep only top BEAM_WIDTH * 3 states at each position
             dp[i + 1].sort(key=lambda x: -x[0])
@@ -176,7 +178,7 @@ class Matcher:
                 break
         return syls
 
-    def _finalize(self, results: list) -> list:
+    def _finalize(self, results: list, limit: int = _MAX_CANDIDATES) -> list:
         """Sort by score desc, deduplicate, return word strings only."""
         results.sort(key=lambda x: -x[1])
         seen = set()
@@ -185,4 +187,4 @@ class Matcher:
             if word not in seen:
                 seen.add(word)
                 out.append(word)
-        return out[:_MAX_CANDIDATES]
+        return out[:limit]
