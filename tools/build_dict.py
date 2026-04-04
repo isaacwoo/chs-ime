@@ -12,7 +12,6 @@ Run once on dev machine (needs internet). Output is committed to the repo.
 
 import json
 import os
-import sys
 import unicodedata
 import urllib.request
 
@@ -97,7 +96,8 @@ def parse_phrase_pinyin(text: str) -> list[tuple[str, str, int]]:
     Frequency is derived as: max(1, 100_000 - line_rank * 3)
     """
     entries: list[tuple[str, str, int]] = []
-    for rank, line in enumerate(text.splitlines()):
+    entry_rank = 0
+    for line in text.splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue
@@ -112,7 +112,8 @@ def parse_phrase_pinyin(text: str) -> list[tuple[str, str, int]]:
         syllables = [strip_tones(s) for s in raw_pinyin.split()]
         joined = "".join(syllables)
         if joined:
-            entries.append((phrase, joined, rank))
+            entries.append((phrase, joined, entry_rank))
+            entry_rank += 1
     return entries
 
 
@@ -131,7 +132,7 @@ def build_dict(
     output: dict[str, list[tuple[str, int]]] = {}
 
     # ── Characters ────────────────────────────────────────────────────────────
-    # Base frequency 50000; we'll boost later based on phrase coverage.
+    # Base frequency 20000; boosted by up to 79000 based on phrase-head count.
     char_freq_boost: dict[str, int] = {}  # char → count of phrases it leads
     for phrase, pinyin, rank in phrase_entries:
         if phrase:
