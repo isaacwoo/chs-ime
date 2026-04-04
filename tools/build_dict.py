@@ -151,7 +151,7 @@ def build_dict(
     for phrase, pinyin, rank in phrase_entries:
         if len(phrase) < 2:
             continue  # single chars already handled above
-        freq = max(1, 100_000 - rank * 3)
+        freq = max(1, 100_000 - rank)
         if pinyin not in output:
             output[pinyin] = []
         output[pinyin].append((phrase, freq))
