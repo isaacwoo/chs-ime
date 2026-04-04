@@ -1,0 +1,12 @@
+# Generated at runtime
+data/user_freq.json
+data/pinyin_dict.pkl
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# OS
+.DS_Store
+Thumbs.db
