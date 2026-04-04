@@ -77,7 +77,7 @@ def parse_char_pinyin(text: str) -> dict[str, str]:
             codepoint_part, pinyin_part = line.split(":", 1)
             codepoint = int(codepoint_part.strip()[2:], 16)  # 'U+4E00' → 0x4E00
             char = chr(codepoint)
-            first_pinyin = pinyin_part.strip().split(",")[0].strip()
+            first_pinyin = pinyin_part.strip().split(",")[0].split("#")[0].strip()
             result[char] = strip_tones(first_pinyin)
         except (ValueError, IndexError):
             continue
@@ -105,7 +105,7 @@ def parse_phrase_pinyin(text: str) -> list[tuple[str, str, int]]:
             continue
         phrase_part, pinyin_part = line.split(":", 1)
         phrase = phrase_part.strip()
-        raw_pinyin = pinyin_part.strip()
+        raw_pinyin = pinyin_part.split("#")[0].strip()
         if not phrase or not raw_pinyin:
             continue
         # Join syllables: 'nǐ hǎo' → 'nihao'
