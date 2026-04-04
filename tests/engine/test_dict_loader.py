@@ -28,7 +28,11 @@ class TestDictLoader(unittest.TestCase):
         self.loader = DictLoader.load(self.path)
 
     def tearDown(self):
+        base, _ = os.path.splitext(self.path)
+        cache_path = base + ".pkl"
         os.unlink(self.path)
+        if os.path.exists(cache_path):
+            os.unlink(cache_path)
 
     def test_full_index_lookup(self):
         results = self.loader.full_index.get("nihao", [])

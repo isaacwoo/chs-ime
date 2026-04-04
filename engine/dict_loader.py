@@ -21,9 +21,9 @@ class DictLoader:
     """
 
     def __init__(self) -> None:
-        self.full_index:   dict = {}
-        self.abbrev_index: dict = {}
-        self.char_index:   dict = {}
+        self.full_index:   dict[str, list[tuple[str, int]]] = {}
+        self.abbrev_index: dict[str, list[tuple[str, int]]] = {}
+        self.char_index:   dict[str, list[tuple[str, int]]] = {}
 
     # ── Public factory ────────────────────────────────────────────────────────
 
@@ -33,7 +33,8 @@ class DictLoader:
         Load dictionary from JSON (or pickle cache).
         dict_path : absolute path to pinyin_dict.json
         """
-        cache_path = dict_path.replace(".json", ".pkl")
+        base, _ = os.path.splitext(dict_path)
+        cache_path = base + ".pkl"
         loader = cls._load_from_cache(cache_path)
         if loader is not None:
             return loader
