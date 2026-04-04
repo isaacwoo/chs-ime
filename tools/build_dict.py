@@ -38,14 +38,22 @@ def fetch_text(url: str) -> str:
 def strip_tones(pinyin: str) -> str:
     """
     Convert toned pinyin to tone-free ASCII.
-    'nǐ hǎo' → 'ni hao'
-    Also converts ü → v (standard computer input for ü).
+    'nǐ hǎo' → 'ni hao',  'nǚ' → 'nv'
+
+    Replaces ü (and toned ü variants) with v before NFD decomposition,
+    because NFD splits ü into u + combining diaeresis, making a
+    post-decomposition replace impossible.
     """
-    # NFD decompose → remove combining diacritics (tone marks)
+    # Replace all ü-variants with v BEFORE decomposition:
+    # U+00FC (plain ü) + U+01D6, U+01D8, U+01DA, U+01DC (toned ü)
+    pinyin = pinyin.replace("ü", "v")  # U+00FC
+    pinyin = pinyin.replace("ǖ", "v")  # U+01D6
+    pinyin = pinyin.replace("ǘ", "v")  # U+01D8
+    pinyin = pinyin.replace("ǚ", "v")  # U+01DA
+    pinyin = pinyin.replace("ǜ", "v")  # U+01DC
+    # NFD decompose → remove combining diacritics (remaining tone marks)
     nfd = unicodedata.normalize("NFD", pinyin)
     stripped = "".join(c for c in nfd if unicodedata.category(c) != "Mn")
-    # ü (U+00FC) survives NFD decomposition unchanged — convert to v
-    stripped = stripped.replace("ü", "v")
     return stripped
 
 
