@@ -5,7 +5,7 @@ import config
 
 class TestConfig(unittest.TestCase):
     def test_valid_syllables_is_set(self):
-        self.assertIsInstance(config.VALID_SYLLABLES, (set, frozenset))
+        self.assertIsInstance(config.VALID_SYLLABLES, frozenset)
 
     def test_common_syllables_present(self):
         for syl in ['ni', 'hao', 'wo', 'men', 'zhong', 'guo', 'zhuang']:

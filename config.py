@@ -39,7 +39,9 @@ PUNCT_MAP: dict[str, str] = {
 
 # ── Fuzzy pinyin map ──────────────────────────────────────────────────────────
 # Each entry maps one pronunciation to its fuzzy equivalent.
-# Both directions are listed so the lookup is symmetric.
+# Most pairs are bidirectional. Exception: 'r' -> 'l' is one-directional
+# because 'l' is already mapped to 'n'; the three-way r/l/n overlap is
+# handled by the matcher applying the map once per syllable.
 FUZZY_MAP: dict[str, str] = {
     # Initials
     "zh": "z",  "z": "zh",
@@ -56,7 +58,7 @@ FUZZY_MAP: dict[str, str] = {
 }
 
 # ── Valid pinyin syllables (standard Mandarin, tone-free) ────────────────────
-# ~415 entries covering all legal combinations.
+# 410 entries covering all legal combinations.
 VALID_SYLLABLES: frozenset[str] = frozenset({
     # ── Standalone finals ────────────────────────────────────────────────────
     "a", "ai", "an", "ang", "ao",
