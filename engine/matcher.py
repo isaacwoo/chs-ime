@@ -17,7 +17,7 @@ from engine.dict_loader import DictLoader
 from engine.pinyin_parser import segment
 
 _VOWELS = frozenset("aeiouv")
-_BEAM_WIDTH = 5      # candidates kept per DP position in beam search
+_BEAM_WIDTH = 25     # candidates explored per syllable in DP (was 5 — too narrow, pruned 个 at rank 7)
 _MAX_CANDIDATES = 50
 
 
@@ -116,12 +116,16 @@ class Matcher:
                     for word, freq in entries[:_BEAM_WIDTH]:
                         boost = self._user_boost(joined, word)
                         span_len = j - i  # number of syllables this phrase covers
-                        span_bonus = (span_len - 1) * 80000  # reward multi-syllable phrase matches
+                        # Span bonus makes ANY dict phrase beat char-by-char decomposition.
+                        # Worst-case char combo for N syllables = N * 99000.
+                        # A phrase (even freq=1) gets: 1 + (span_len-1)*200000.
+                        # At span_len=2: 200001 > 2*99000=198000. Phrase wins. ✓
+                        span_bonus = (span_len - 1) * 200000
                         dp[j].append((score + freq + boost + span_bonus, text + word))
 
-            # Prune beam: keep only top BEAM_WIDTH * 3 states at each position
+            # Prune beam: keep top _MAX_CANDIDATES states per position to avoid explosion
             dp[i + 1].sort(key=lambda x: -x[0])
-            dp[i + 1] = dp[i + 1][: _BEAM_WIDTH * 3]
+            dp[i + 1] = dp[i + 1][:_MAX_CANDIDATES]
 
         seen = set()
         result = []
