@@ -107,13 +107,19 @@ class MainWindow:
 
         for text, cmd in [
             ("复制全部", self._copy_all),
-            ("清空",   self._clear_edit),
-            ("撤销",   self._undo),
+            ("清空",     self._clear_edit),
+            ("撤销",     self._undo),
         ]:
             tk.Button(
                 btn_frame, text=text, font=self._button_font,
                 command=cmd, relief=tk.GROOVE, padx=8,
             ).pack(side=tk.LEFT, padx=3)
+
+        # Help button (right side, before status)
+        tk.Button(
+            btn_frame, text="帮助 F1", font=self._button_font,
+            command=self._show_help, relief=tk.GROOVE, padx=6, fg="#444",
+        ).pack(side=tk.RIGHT, padx=3)
 
         # Status label (right side)
         self._status_var = tk.StringVar(value="就绪")
@@ -166,6 +172,8 @@ class MainWindow:
     def _bind_keys(self) -> None:
         e = self.pinyin_entry
         e.bind("<KeyPress>", self._on_key_press)
+        # F1 works anywhere in the window
+        self.root.bind("<F1>", lambda _: self._show_help())
 
     def _on_key_press(self, event: tk.Event) -> Optional[str]:
         keysym = event.keysym
@@ -185,7 +193,9 @@ class MainWindow:
                 return "break"
             return None  # let other Ctrl combos pass
 
-        # ── Navigation ────────────────────────────────────────────────────────
+        # ── Help / Navigation ─────────────────────────────────────────────────
+        if keysym == "F1":
+            self._show_help(); return "break"
         if keysym == "Escape":
             self.clear_pinyin(); return "break"
         if keysym == "minus":
@@ -284,6 +294,142 @@ class MainWindow:
         content = self.edit_area.get("1.0", tk.END)
         if len(content) > 1:   # content always ends with \n
             self.edit_area.delete("end - 2 chars")
+
+    # ── Help dialog ──────────────────────────────────────────────────────────
+
+    _HELP_TEXT = """\
+简体中文输入助手  —  使用说明
+══════════════════════════════════════════════
+
+【基本输入流程】
+  1. 在"拼音"框直接键入拼音字母
+  2. 上方候选区自动显示推荐词汇
+  3. 按数字键或空格选择候选词
+  4. 选中的文字累积到上方编辑区
+  5. 完成后按 Ctrl+C 复制到剪贴板
+
+──────────────────────────────────────────────
+【选词快捷键】
+  1 ~ 5     选择第 1~5 个候选词
+  空格       选择第 1 候选（最高推荐）
+  回车       同上
+
+【翻页】
+  -（减号）  上一页候选
+  =（等号）  下一页候选
+
+【拼音编辑】
+  Backspace  删除最后一个拼音字母
+             （拼音为空时：删除编辑区最后一个字）
+  Esc        清空当前拼音，取消本次输入
+
+──────────────────────────────────────────────
+【编辑区操作】
+  Ctrl + C          复制编辑区全部文字到剪贴板
+  Ctrl + Z          撤销上一次选词（可多次撤销）
+  Ctrl + Backspace  清空编辑区全部内容
+  Ctrl + A          全选编辑区文字
+
+──────────────────────────────────────────────
+【标点符号】  拼音为空时输入以下键自动转为中文标点：
+
+  ,  →  ，　　 .  →  。　　 ;  →  ；
+  :  →  ：　　 !  →  ！　　 ?  →  ？
+  (  →  （　　 )  →  ）
+  <  →  《　　 >  →  》
+  '  →  ' '  （自动交替开/关单引号）
+  "  →  " "  （自动交替开/关双引号）
+
+──────────────────────────────────────────────
+【简拼模式】  输入全部为声母（无韵母）时自动启用
+
+  示例：
+    bj    →  北京、不举、不久 …
+    nh    →  你好 …
+    wt    →  问题 …
+    gzry  →  工作人员 …
+
+  提示：简拼候选较多，配合数字键快速选择
+
+──────────────────────────────────────────────
+【模糊音】  以下声母/韵母可互换输入，不影响候选：
+
+  声母：zh ↔ z　 ch ↔ c　 sh ↔ s
+        l  ↔ n　 f  ↔ h
+  韵母：an ↔ ang　 en ↔ eng　 in ↔ ing
+
+  示例：
+    "zong" 可打出 "中"　"si" 可打出 "是"
+
+──────────────────────────────────────────────
+【智能学习】
+  • 每次选词后自动记录用法频率
+  • 同一拼音下多次选过的词优先排前
+  • 学习数据保存在 data/user_freq.json
+
+══════════════════════════════════════════════
+按 F1 或点击"帮助"按钮可随时再次查看本说明
+"""
+
+    def _show_help(self) -> None:
+        """Show a floating help window. Only one instance allowed at a time."""
+        # If already open, just bring it to front
+        if hasattr(self, "_help_win") and self._help_win.winfo_exists():
+            self._help_win.lift()
+            self._help_win.focus_force()
+            return
+
+        win = tk.Toplevel(self.root)
+        win.title("使用帮助")
+        win.attributes("-topmost", True)
+        win.resizable(True, True)
+
+        # Position: slightly offset from main window
+        x = self.root.winfo_x()
+        y = self.root.winfo_y()
+        win.geometry(f"520x580+{max(0, x - 30)}+{max(0, y - 30)}")
+
+        # Scrollable text area
+        frame = tk.Frame(win)
+        frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 4))
+
+        scrollbar = tk.Scrollbar(frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        text = tk.Text(
+            frame,
+            font=(self.font_name, 10),
+            wrap=tk.WORD,
+            relief=tk.FLAT,
+            bg="#fffef5",
+            padx=10,
+            pady=8,
+            yscrollcommand=scrollbar.set,
+            state=tk.NORMAL,
+            cursor="arrow",
+        )
+        text.pack(fill=tk.BOTH, expand=True)
+        scrollbar.config(command=text.yview)
+
+        text.insert("1.0", self._HELP_TEXT)
+        text.config(state=tk.DISABLED)   # read-only
+
+        # Close button
+        btn_frame = tk.Frame(win)
+        btn_frame.pack(fill=tk.X, padx=10, pady=(0, 8))
+        tk.Button(
+            btn_frame, text="关闭  Esc",
+            font=self._button_font,
+            command=win.destroy,
+            relief=tk.GROOVE, padx=12,
+        ).pack(side=tk.RIGHT)
+
+        # Keyboard shortcut to close
+        win.bind("<Escape>", lambda _: win.destroy())
+        win.bind("<F1>",     lambda _: win.destroy())
+
+        self._help_win = win
+        win.focus_force()
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
