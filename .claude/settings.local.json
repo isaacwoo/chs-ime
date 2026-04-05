@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /d D:/code/chs-ime)",
+      "Bash(python -m pytest tests/test_config.py -v)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(pkill -f \"build_dict.py\")",
+      "Bash(python -c \":*)",
+      "Bash(python3 -c \"print\\(''test''\\)\")",
+      "Bash(taskkill /F /IM python.exe /FI \"WINDOWTITLE eq *_test_window*\")",
+      "Bash(git init:*)",
+      "Bash(echo \"Exit code: $?\")"
+    ]
+  }
+}
